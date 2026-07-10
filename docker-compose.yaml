@@ -1,0 +1,89 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: mca_prefect_db
+    environment:
+      POSTGRES_USER: prefect
+      POSTGRES_PASSWORD: prefect
+      POSTGRES_DB: prefect
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prefect -d prefect"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  prefect-server:
+    env_file:
+      - .env
+    build: .
+    container_name: mca_prefect_server
+    ports:
+      - "4200:4200"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: |
+      sh -c "
+      prefect server start --host 0.0.0.0 &
+      
+      echo 'Waiting for Prefect Server API to become available...'
+      until curl -s http://localhost:4200/api/health | grep -q 'true'; do
+          sleep 1
+      done
+      
+      echo 'Prefect Server is up! Running initialization script...'
+      python /app/init_prefect.py
+      wait
+      "
+    
+    environment:
+      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://prefect:prefect@postgres:5432/prefect
+      - PREFECT_HOME=/root/.prefect
+      # - PREFECT_SERVER_API_AUTH_STRING
+      # - PREFECT_SERVER_API_CSRF_PROTECTION_ENABLED=true
+      # - PREFECT_SERVER_CSRF_PROTECTION_ENABLED=true
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  mca_prefect_serve_flows:
+    env_file:
+      - .env
+    build: .
+    container_name: mca_prefect_worker
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    command: python deploy_flows.py
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
+      - PREFECT_HOME=/root/.prefect
+      # - PREFECT_SERVER_API_AUTH_STRING=admin:pass
+      # Specify env variables here
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - pgdata:/var/lib/postgresql/data
+      - C:\:/app/data/c_drive
+      # - Z:\:/app/data/z_drive
+      - smb_z_share:/app/data/z_drive
+    restart: "no"
+
+volumes:
+  pgdata:
+  smb_z_share:
+    driver: local
+    driver_opts:
+      type: cifs
+      # Replace with your actual share address, username, and password
+      device: "//172.16.0.138/edall/"
+      o: "username=${SMB_USERNAME},password=${SMB_PASSWORD},file_mode=0777,dir_mode=0777,iocharset=utf8"
+  
+  

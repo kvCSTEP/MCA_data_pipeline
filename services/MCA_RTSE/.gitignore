@@ -1,0 +1,4 @@
+.env
+rtse_venv/
+__pycache__/
+*.pyc

@@ -1,0 +1,9 @@
+prefect
+asyncpg
+O365
+prefect-docker
+
+# scripts requirements
+geopandas
+pandas
+tqdm
