@@ -43,12 +43,12 @@ services:
     environment:
       - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://prefect:prefect@postgres:5432/prefect
       - PREFECT_HOME=/root/.prefect
-      - PREFECT_SERVER_API_AUTH_STRING=mca_secure_worker_token_2026
+      - PREFECT_SERVER_API_AUTH_STRING=${PREFECT_API_KEY}
       # - PREFECT_SERVER_API_CSRF_PROTECTION_ENABLED=true
       # - PREFECT_SERVER_CSRF_PROTECTION_ENABLED=true
       - PREFECT_UI_API_URL=http://localhost:80/api
       - PREFECT_API_URL=http://127.0.0.1:4200/api
-      - PREFECT_API_AUTH_STRING=mca_secure_worker_token_2026
+      - PREFECT_API_AUTH_STRING=${PREFECT_API_KEY}
       - PREFECT_CLIENT_CSRF_SUPPORT_ENABLED=true
 
 
@@ -72,7 +72,7 @@ services:
     environment:
       - PREFECT_HOME=/root/.prefect
       - PREFECT_API_URL=http://nginx_ingress:80/api
-      - PREFECT_API_AUTH_STRING=mca_secure_worker_token_2026
+      - PREFECT_API_AUTH_STRING=${PREFECT_API_KEY}
       - PREFECT_CLIENT_CSRF_SUPPORT_ENABLED=true
 
       # Specify env variables here

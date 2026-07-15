@@ -10,7 +10,7 @@ def get_unique_id():
 class AreaCalculationInput(RunInput):
     input_folder: str  
     output_folder: str 
-    check_first: bool
+    check_first: bool = False
     
 class SpatialJoinInput(RunInput):
     ward_shapefile_path: str
