@@ -101,7 +101,7 @@ def build_image(tag: str, dockerfile: str) -> str:
 @flow(name="mca_script_run",
     flow_run_name= lambda : f"{get_parameter_content('city')} {get_run_date()}"
     )
-async def mca_script_run(city):
+async def mca_script_run(city: str):
     logger = get_run_logger()
 
     mca_input = await pause_flow_run(
