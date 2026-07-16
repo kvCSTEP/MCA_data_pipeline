@@ -15,4 +15,3 @@ if __name__=="__main__":
     
     # deploy(mca, area_calc, spatial_join, csv_polygon, master_pipeline)
     serve(mca, area_calc, spatial_join, csv_polygon, pipeline, csv_polygon_new)
-    
