@@ -13,8 +13,8 @@ http {
     }
 
     map $http_authorization $api_auth_mode {
-        default                                            "oidc";
-        "Basic bWNhX3NlY3VyZV93b3JrZXJfdG9rZW5fMjAyNg=="   "token";
+        default                         "oidc";
+        "Basic ${WORKER_TOKEN_B64}"     "token";
     }
 
     server {

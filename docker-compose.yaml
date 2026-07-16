@@ -108,17 +108,18 @@ services:
       - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
       - OAUTH2_PROXY_REDIRECT_URL=http://localhost/oauth2/callback
       - OAUTH2_PROXY_EMAIL_DOMAINS=cstep.in
-
-
-      
-
+  
   nginx-gate:
     image: nginx:latest
     container_name: nginx_ingress
     ports:
       - "80:80"
+    env_file:
+    - .env
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+      - ./nginx-entrypoint.sh:/nginx-entrypoint.sh:ro  
+    entrypoint: ["/bin/sh", "/nginx-entrypoint.sh", "${PREFECT_API_KEY}"]
     depends_on:
           prefect-server:
             condition: service_started
