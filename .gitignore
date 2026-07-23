@@ -1,2 +1,6 @@
 .env
 .venv
+.vscode
+init-proxy.sh
+md_code.py
+

@@ -1,11 +1,13 @@
 from prefect import flow, task, get_run_logger, pause_flow_run
 import os
 import subprocess
+from prefect.context import get_run_context
 
-from helpers.email_helper import send_email
 from helpers.prefect_input_classes import *
 from helpers.prefect_helper import get_run_date, get_parameter_content
-
+from teams_notifications import (on_completion, on_crashed, 
+                                 on_failure, on_running, 
+                                 on_cancellation, notify_paused)
 @task(task_run_name=f"area_calculation python call"
       )
 async def run_area_calc(input_folder: str, output_folder: str, check_first: bool):
@@ -39,10 +41,17 @@ async def run_area_calc(input_folder: str, output_folder: str, check_first: bool
     return result.stdout
 # ===========================================================================================
 @flow(name="area_calculation",
-    flow_run_name= lambda : f"{get_parameter_content('city')} {get_run_date()}"
-      )
+    flow_run_name= lambda : f"{get_parameter_content('city')} {get_run_date()}",
+    on_completion=[on_completion],
+    on_cancellation=[on_cancellation],
+    on_crashed=[on_crashed],
+    on_failure=[on_failure],
+    on_running=[on_running]
+    )
 async def area_calculation(city: str):
     
+    ctx = get_run_context()
+    await notify_paused(ctx.flow_run.id, ctx.flow.name, ctx.flow_run.name)
     area_input: AreaCalculationInput = await pause_flow_run(
         wait_for_input=AreaCalculationInput,
         timeout=TIMEOUT_SEC,   # auto-fail after 1 hour if nobody resumes
@@ -51,15 +60,4 @@ async def area_calculation(city: str):
     area_calc_script_output = await run_area_calc(area_input.input_folder,
                                                   area_input.output_folder,
                                                   area_input.check_first)
-    if area_calc_script_output:
-        await send_email(body="Area calculation script completed successfully", 
-                   to=["keerthi.vignesh@cstep.in"],
-                   subject="Update on Area Calculation"
-                   )
-    
-    else:
-        await send_email(body="Area calculation script Failed. ", 
-                   to=["keerthi.vignesh@cstep.in"],
-                   subject="Update on Area Calculation"
-                   )
     

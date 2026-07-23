@@ -4,7 +4,7 @@ services:
     container_name: mca_prefect_db
     environment:
       POSTGRES_USER: prefect
-      POSTGRES_PASSWORD: prefect
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: prefect
     ports:
       - "5432:5432"

@@ -3,10 +3,10 @@ from prefect import flow, task, get_run_logger, pause_flow_run
 import subprocess
 import shutil
 
-from helpers.email_helper import send_email
 from helpers.prefect_input_classes import *
 from prefect.variables import Variable
 from helpers.prefect_helper import get_run_date, get_parameter_content
+from prefect.context import get_run_context
 
 from prefect_docker.containers import (
     create_docker_container,
@@ -14,6 +14,10 @@ from prefect_docker.containers import (
     get_docker_container_logs,
     remove_docker_container 
 )
+from teams_notifications import (on_completion, on_crashed, 
+                                 on_failure, on_running, 
+                                 on_cancellation, notify_paused)
+
 
 DOCKER_IMAGE_NAME = "mca-runner"
 DB_INFO_VARIABLE = "test_mca_db_info"
@@ -99,11 +103,18 @@ def build_image(tag: str, dockerfile: str) -> str:
 # --------------------------------------------------------------------------------------------------------------------
 
 @flow(name="mca_script_run",
-    flow_run_name= lambda : f"{get_parameter_content('city')} {get_run_date()}"
+    flow_run_name= lambda : f"{get_parameter_content('city')} {get_run_date()}",
+    on_completion=[on_completion],
+    on_cancellation=[on_cancellation],
+    on_crashed=[on_crashed],
+    on_failure=[on_failure],
+    on_running=[on_running]
     )
 async def mca_script_run(city: str):
     logger = get_run_logger()
 
+    ctx = get_run_context()
+    await notify_paused(ctx.flow_run.id, ctx.flow.name, ctx.flow_run.name)
     mca_input = await pause_flow_run(
         wait_for_input=MCAScriptInput,
         key=get_unique_id()
@@ -116,10 +127,5 @@ async def mca_script_run(city: str):
     logger.info(job_vars)
     # mca_output = run_mca_scrpit(DOCKER_IMAGE_NAME, job_vars)
     await run_isolated_container(DOCKER_IMAGE_NAME, job_vars)
-    
-    msg_plain = f"MCA script run completed \n Flow is in paused status for {TIMEOUT_SEC /60} minutes."
-    await send_email(subject="MCA flow update",
-        to=["keerthi.vignesh@cstep.in"],
-        body=msg_plain
-        )    
+
     
