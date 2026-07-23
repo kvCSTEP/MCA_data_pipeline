@@ -15,7 +15,16 @@
 > - Teams Notification
 > *  -->
 
-### MCA_RTSE_PREFECT
+### How to set up the pipeline ?
+1. Create MCA-runner image 
+2. docker-compose up --build 
+3. execute teams_notifications\001_create_teams_threads.sql
+4. execute get_initial_refresh_token.py
+   * The script will print a ms login url with code. Login with the app user having admin access. we will get the access token. A long term usable token will be created, and the token will be added to prefect secret with the name "teams-notifier-refresh-token".
+   * The access token will be used to create a new one time usable refresh token on completion of each "teams-notifier-refresh-token" use. This is the default behaviour of the teams.
+5. https://prefect-server/ -> This will point us to prefect dashboard
+
+###  Directory structure and a brief description
 ```
 ├── 📁 **flows/**       -> Prefect flow for each script + orchestration
 │   ├── 📄 area_calc_flow.py
@@ -72,15 +81,24 @@
 > - MS-Teams thread 
 > * MS_TEAMS_CHANNEL_ID, ACTUAL_PREFCE_URL
 
-### How to set up the pipeline ?
-1. Create MCA-runner image 
-2. docker-compose up --build 
-3. execute teams_notifications\001_create_teams_threads.sql
-4. execute get_initial_refresh_token.py
-   * The script will print a ms login url with code. Login with the app user having admin access. we will get the access token. A long term usable token will be created, and the token will be added to prefect secret with the name "teams-notifier-refresh-token".
-   * The access token will be used to create a new one time usable refresh token on completion of each "teams-notifier-refresh-token" use. This is the default behaviour of the teams.
-5. https://prefect-server/ -> This will point us to prefect dashboard
+## Notes for Nerds
+### Working of this repo
+1. docker-compose up will up all the services.
+2. Create flows with flow name
+1. Deploy the flows with the deployment name 
+1. Create orchestrator flow
+   1. The orchestration flow should call run_deployment()
+   1. Naming convention : "flow name"/"deployment name"
+1. Serve the deployment 
+   1. serve() is a long running process
+   1. alternate to serve(), we can use :
+      deploy() / flow.to_deployment().apply() + a worker
+1. worth knowing :
+   * serve vs deploy
+   * pooling
 
-### Notes
+### Notes on usage 
 * On any update on MCA_RTSE repo, the current repo should do git pull, create mca-runner image.
+* Spatial processing updates should be done in this repo only
+
 
