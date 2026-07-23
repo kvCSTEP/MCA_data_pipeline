@@ -1,3 +1,5 @@
+from re import S
+
 from prefect.input import RunInput
 
 import uuid
@@ -34,5 +36,16 @@ class MCAScriptInput(RunInput):
     
 class CityInput(RunInput):
     city: str
+    
+class MergedScriptInput(RunInput):
+    INPUT_SLOPE_SHP_FOLDER: str
+    WARD_BOUNDARY_SHP: str
+    WARD_NAME_FIELD: str
+    WARD_NO_FIELD: str
+    SPATIAL_JOIN_PREDICATE: str
+    INPUT_POLYGON_CSV: str
+    FINAL_SHP_OUTPUT_FOLDER: str
+    OUT_WARD_TILE_CSV: str
+    OUT_POLYGON_WITH_WARDS_CSV: str
     
     
