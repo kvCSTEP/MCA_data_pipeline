@@ -25,7 +25,7 @@ from . import db_helper as db
 from .notifier import create_root_message, post_standalone, reply_to_thread
 from .thread_resolver import get_flow_run_url, get_topmost_ancestor_id
 
-TOP_LEVEL_FLOW_NAMES = {"master_pipeline"}
+TOP_LEVEL_FLOW_NAMES = {"master_pipeline", "two_pass_orchestration"}
 
 _STATE_EMOJI = {
     "RUNNING": "▶️",

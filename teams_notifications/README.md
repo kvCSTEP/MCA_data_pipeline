@@ -135,4 +135,7 @@ invoked in the flows.
 - `Paused` has no native Prefect flow-level hook; `notify_paused()` must be
   called explicitly at the same call site as `pause_flow_run()`.
 
+## Notes for nerds
+* Add orchestrator flow name to TOP_LEVEL_FLOW_NAMES list
+
 ![alt text](<Flow State Change-2026-07-20-102734-1.png>)
