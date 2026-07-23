@@ -1,10 +1,12 @@
 from prefect import flow, task, get_run_logger, pause_flow_run
 import subprocess
+from prefect.context import get_run_context
 
-from helpers.email_helper import send_email
 from helpers.prefect_input_classes import *
 from helpers.prefect_helper import get_run_date, get_parameter_content
-
+from teams_notifications import (on_completion, on_crashed, 
+                                 on_failure, on_running, 
+                                 on_cancellation, notify_paused)
 @task(name = "spatial join task",
       task_run_name=f"spatial join python call",
       )
@@ -52,10 +54,18 @@ async def run_spatial_join(spatial_join_input: SpatialJoinInput):
 
 # =========================================================================
 @flow(name="spatial_joins",
-    flow_run_name= lambda : f"{get_parameter_content('city')} {get_run_date()}"
+    flow_run_name= lambda : f"{get_parameter_content('city')} {get_run_date()}",
+    on_completion=[on_completion],
+    on_cancellation=[on_cancellation],
+    on_crashed=[on_crashed],
+    on_failure=[on_failure],
+    on_running=[on_running]
     )
 async def spatial_joins(city: str):
     logger = get_run_logger()
+    
+    ctx = get_run_context()
+    await notify_paused(ctx.flow_run.id, ctx.flow.name, ctx.flow_run.name)
     logger.info("Waitng for Spatial Join Inputs...")
     spatial_join_input: SpatialJoinInput = await pause_flow_run(
         wait_for_input=SpatialJoinInput,
@@ -64,15 +74,3 @@ async def spatial_joins(city: str):
         )
     
     spatial_join_output = await run_spatial_join(spatial_join_input)
-    
-    
-    if spatial_join_output:
-        await send_email(subject="Spatial join update",
-                   to=["keerthi.vignesh@cstep.in"],
-                   body="Spatial join SUCCESS. proceed on app."
-                   )
-    else:
-        await send_email(subject="Spatial join update",
-                   to=["keerthi.vignesh@cstep.in"],
-                   body="Spatial join FAILED. proceed on app."
-                   )

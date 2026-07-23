@@ -1,9 +1,11 @@
 from prefect import flow, task, get_run_logger, pause_flow_run
 import subprocess
-from helpers.email_helper import send_email
 from helpers.prefect_input_classes import *
 from helpers.prefect_helper import get_run_date, get_parameter_content
-
+from prefect.context import get_run_context
+from teams_notifications import (on_completion, on_crashed, 
+                                 on_failure, on_running, 
+                                 on_cancellation, notify_paused)
 @task(task_run_name=f"csv_polygon_mapping python call"
       )
 def run_csv_polygon(csv_polygon_input: CsvPolygonInput):
@@ -35,9 +37,17 @@ def run_csv_polygon(csv_polygon_input: CsvPolygonInput):
 # ======================================================================
 @flow(name="CSV-Polygon mapping",
     flow_run_name= lambda : f"{get_parameter_content('city')} {get_run_date()}",
-      )
+    on_completion=[on_completion],
+    on_cancellation=[on_cancellation],
+    on_crashed=[on_crashed],
+    on_failure=[on_failure],
+    on_running=[on_running]
+    )
 async def csv_polygon_map(city: str):
     logger = get_run_logger()
+    
+    ctx = get_run_context()
+    await notify_paused(ctx.flow_run.id, ctx.flow.name, ctx.flow_run.name)
     logger.info("Waitng for CSV-polygon mapping inputs(shp_folder, csv_path, output_csv_path)...")
     csv_polygon_input: CsvPolygonInput = await pause_flow_run(
         wait_for_input=CsvPolygonInput,
@@ -47,14 +57,3 @@ async def csv_polygon_map(city: str):
     
     csv_polygon_output = run_csv_polygon(csv_polygon_input)
     
-    if csv_polygon_output:
-        await send_email(body="csv-polygon mapping script completed successfully", 
-                   to=["keerthi.vignesh@cstep.in"],
-                   subject="update on csv-polygon mapping"
-                   )
-    
-    else:
-        await send_email(body="csv-polygon mapping script Failed. ", 
-                   to=["keerthi.vignesh@cstep.in"],
-                   subject="update on csv-polygon mapping"
-                   )

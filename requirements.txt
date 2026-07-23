@@ -7,3 +7,6 @@ prefect-docker
 geopandas
 pandas
 tqdm
+
+# MS teams requirements
+msal
